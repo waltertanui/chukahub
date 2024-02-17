@@ -1,105 +1,148 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase'; // Assuming you have Firebase config in a separate file
+import { FaArrowLeft } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 
-function Quizes() {
-  // State hooks for selected filters and PDF cards
+const Cats = () => {
+  const [uploads, setUploads] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
-  const [pdfCards, setPdfCards] = useState([]);
 
-  // Mapping between faculties and their corresponding departments
-  const facultyDepartments = {
-    'Science': ['Computer Science', 'IT', 'Electrical', 'Mechanical'],
-    'Humanities': ['Criminology', 'Environment', 'Sociology'],
-    // Add more faculties and their departments as needed
+  useEffect(() => {
+    fetchData();
+  }, [selectedFaculty, selectedDepartment, selectedYear]);
+
+  const fetchData = async () => {
+    if (selectedFaculty && selectedDepartment && selectedYear) {
+      const uploadsRef = collection(db, 'uploads');
+      const q = query(
+        uploadsRef,
+        where('category', '==', 'cats'), // Filter by category
+        where('faculty', '==', selectedFaculty), // Filter by faculty
+        where('department', '==', selectedDepartment), // Filter by department
+        where('year', '==', selectedYear) // Filter by year
+      );
+
+      const snapshot = await getDocs(q);
+
+      const fetchedUploads = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setUploads(fetchedUploads);
+    }
   };
 
-  // Function to update departments based on the selected faculty
-  const updateDepartments = (event) => {
-    const faculty = event.target.value;
-    setSelectedFaculty(faculty);
-    setSelectedDepartment('');
-    setSelectedYear('');
-    setPdfCards([]);
-  };
-
-  // Function to apply filters and update PDF cards
-  const applyFilters = () => {
-    const filteredPdfCards = document.querySelectorAll('.pdf-card');
-    const filteredCards = Array.from(filteredPdfCards).filter((card) => {
-      const cardFaculty = card.getAttribute('data-faculty');
-      const cardDepartment = card.getAttribute('data-department');
-      const cardYear = card.getAttribute('data-year');
-
-      const facultyMatch = selectedFaculty === '' || selectedFaculty === cardFaculty;
-      const departmentMatch = selectedDepartment === '' || selectedDepartment === cardDepartment;
-      const yearMatch = selectedYear === '' || selectedYear === cardYear;
-
-      return facultyMatch && departmentMatch && yearMatch;
-    });
-    setPdfCards(filteredCards);
+  const handleGetPapers = () => {
+    fetchData();
   };
 
   return (
-    <div className="h-screen bg-cover bg-center items-center flex flex-col ">
-     <div className="navbar bg-gray-200 overflow-hidden flex justify-between items-center h-16 w-full">
-        <div className="logo py-2 px-4 ml-4 text-black text-lg font-bold">Chuka <span className="text-orange-500">Repository</span></div>
-      </div>
-      <div className="flex justify-center w-full bg-gray-900">
-      <form id="filterForm" className="bg-white p-8 mt-6 rounded-lg shadow-lg mb-8">
-        {/* Faculty select */}
-        <label htmlFor="faculty" className="faculty">Faculty:</label>
-        <select id="faculty" name="faculty" onChange={updateDepartments} className="block w-full p-2 border border-gray-300 rounded-md mb-4">
-          <option value="">All</option>
-          <option value="Science">Science</option>
-          <option value="Humanities">Humanities</option>
-          {/* Add more options as needed */}
-        </select>
-
-        {/* Department select */}
-        <label htmlFor="department">Department:</label>
-        <select id="department" name="department" className="block w-full p-2 border border-gray-300 rounded-md mb-4">
-          <option value="">All</option>
-          {facultyDepartments[selectedFaculty]?.map((department, index) => (
-            <option key={index} value={department}>{department}</option>
-          ))}
-        </select>
-
-        {/* Year select */}
-        <label htmlFor="year">Year:</label>
-        <select id="year" name="year" className="block w-full p-2 border border-gray-300 rounded-md mb-4">
-          <option value="">All</option>
-          <option value="1.1">1.1</option>
-          <option value="1.2">1.2</option>
-          <option value="2.1">2.1</option>
-          <option value="2.2">2.2</option>
-          <option value="3.1">3.1</option>
-          <option value="3.2">3.2</option>
-          <option value="4.1">4.1</option>
-          <option value="4.2">4.2</option>
-          {/* Add more options as needed */}
-        </select>
-
-        {/* Get Notes button */}
-        <button type="button" onClick={applyFilters} className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">
-          Get Notes
-        </button>
-      </form>
-      </div>
-
-      {/* Error message */}
-      <div className="error-message text-red-500 font-bold mb-4 hidden" id="errorMessage">No Question and Answers found for your selection</div>
-
-      {/* PDF cards */}
-      <div className="container flex flex-wrap justify-center gap-4" id="pdfContainer">
-        {pdfCards.map((card, index) => (
-          <div key={index} className="pdf-card" data-faculty={card.getAttribute('data-faculty')} data-department={card.getAttribute('data-department')} data-year={card.getAttribute('data-year')}>
-            {card.innerHTML}
+    <div className='bg-gray-900'>
+      <div className="navbar bg-gray-200 overflow-hidden flex justify-between items-center h-16 w-full">
+  <div className="flex items-center">
+    <Link to="/home" className="mr-4">
+      <FaArrowLeft className="text-black w-6 h-6" />
+    </Link>
+    <div className="logo py-2 px-4 ml-4 text-black text-lg font-bold">Chuka <span className="text-orange-500">Repository</span></div>
+  </div>
+</div>
+      <div className="uploads-container p-4 md:p-8">
+        <h2 className="text-2xl mb-2 md:mb-4 font-serif text-center text-white">Cats</h2>
+        <div className="p-4 md:p-30 bg-gray-900 justify-center rounded-md">
+          <div className="flex flex-col md:flex-row justify-center items-center">
+            <div className='p-4 md:p-16 bg-slate-400 w-full md:w-1/2 rounded-sm'>
+              <div className="mb-4 flex flex-col md:flex-row gap-4">
+                <label htmlFor="faculty" className="block mb-1 text-white md:w-40">Select Faculty:</label>
+                <select
+                  id="faculty"
+                  value={selectedFaculty}
+                  onChange={(e) => setSelectedFaculty(e.target.value)}
+                  className="p-2 border border-gray-300 rounded-md w-full md:w-40"
+                >
+                  <option value="">Faculty</option>
+                  <option value="Science">Science</option>
+                  <option value="Law">Law</option>
+                  <option value="Humanities">Humanities</option>
+                </select>
+              </div>
+              <div className="mb-4 flex flex-col md:flex-row gap-4">
+                <label htmlFor="department" className="block mb-1 text-white md:w-40">Select Department:</label>
+                <select
+                  id="department"
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  className="p-2 border border-gray-300 rounded-md w-full md:w-40"
+                >
+                  <option value="">Department</option>
+                  {selectedFaculty === 'Science' && (
+                    <>
+                      <option value="Computer Science">Computer Science</option>
+                      <option value="IT">IT</option>
+                      <option value="Electrical">Electrical</option>
+                      <option value="Mechanical">Mechanical</option>
+                    </>
+                  )}
+                  {selectedFaculty === 'Law' && <option value="Law">Law</option>}
+                  {selectedFaculty === 'Humanities' && (
+                    <>
+                      <option value="Criminology">Criminology</option>
+                      <option value="Environment">Environment</option>
+                      <option value="Sociology">Sociology</option>
+                    </>
+                  )}
+                </select>
+              </div>
+              <div className="mb-4 flex flex-col md:flex-row gap-4">
+                <label htmlFor="year" className="block mb-1 text-white md:w-40">Select Year:</label>
+                <select
+                  id="year"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="p-2 border border-gray-300 rounded-md w-full md:w-40"
+                >
+                  <option value="">Year</option>
+                  <option value="1.1">1.1</option>
+                  <option value="1.2">1.2</option>
+                  <option value="2.1">2.1</option>
+                  <option value="2.2">2.2</option>
+                  <option value="3.1">3.1</option>
+                  <option value="3.2">3.2</option>
+                  <option value="4.1">4.1</option>
+                  <option value="4.2">4.2</option>
+                </select>
+              </div>
+              <button onClick={handleGetPapers} className="bg-blue-500 text-white px-4 py-2 rounded-md w-full md:w-auto hover:bg-blue-600 transition duration-300">
+                Get Past Papers
+              </button>
+            </div>
           </div>
-        ))}
+          <div className="p-4 md:p-24 w-full md:w-1/2 mt-4 rounded-md flex flex-col md:flex-row gap-8">
+            {uploads.length > 0 ? (
+              uploads.map((upload) => (
+                <div key={upload.id} className="mb-4 border border-gray-300 p-4 md:p-10 rounded-md bg-slate-200 flex flex-col">
+                  <h3 className="text-xl mb-2">{upload.title}</h3>
+                  <p className="mb-2">{upload.description}</p>
+                  <div className="flex gap-2">
+                    <p className="mb-2 flex">Faculty: {upload.faculty}</p>
+                    <p className="mb-2 flex">Department: {upload.department}</p>
+                    <p className="mb-2 flex">Year: {upload.year}</p>
+                  </div>
+                  <a href={upload.downloadURL} className="text-blue-500 hover:underline">Download</a>
+                </div>
+              ))
+            ) : (
+              <p className="mt-4 text-green-400">No past papers found.</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
-}
+};
 
-export default Quizes;
+export default Cats;
+

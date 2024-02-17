@@ -8,6 +8,7 @@ import Notes from './components/Notes';
 import Quizes from './components/Quizes';
 import Videos from './components/Videos';
 import Profile from './components/Profile';
+import Upload from './components/Upload';
 
 function App() {
   return (
@@ -21,6 +22,8 @@ function App() {
         <Route path="/quizes" element={<Quizes />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/upload" element={<Upload/>} />
+        
       </Routes>
     </Router>
   );
