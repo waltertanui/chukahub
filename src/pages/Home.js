@@ -12,6 +12,7 @@ function Home() {
   return (
     <div className="min-h-screen bg-gray-800">
       <header className="bg-gray-200 py-4 px-6 flex items-center justify-between sm:px-8">
+        <img src='/logo192.png' alt='logo' className='h-12 w-12'/>
         <div className="text-xl font-bold text-black">Chuka <span className="text-orange-500">Repository</span></div>
         <div className="flex items-center">
           <FaUpload

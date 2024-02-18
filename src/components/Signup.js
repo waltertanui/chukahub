@@ -14,14 +14,13 @@ function Signup() {
   const handleSignUp = async () => {
     setError('');
 
-    // Form validation:
-    if (!regNo || !email || !password) {
-      setError('Please fill in all required fields: registration number, email, and password.');
-      return;
-    }
-
-    // Firebase user creation:
     try {
+      // Form validation:
+      if (!regNo || !email || !password) {
+        throw new Error('Please fill in all required fields: registration number, email, and password.');
+      }
+
+      // Firebase user creation:
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
@@ -31,11 +30,11 @@ function Signup() {
 
       console.log('User created successfully:', user);
 
-      // Ensure correct redirection path:
-      navigate('/home'); // Assuming `/home` is the intended home page route
+      // Navigate to home page:
+      navigate('/home');
     } catch (error) {
-      console.error('Error creating user:', error);
-      setError('An error occurred. Please try again.');
+      console.error('Error creating user:', error.message);
+      setError(error.message);
     }
   };
 
