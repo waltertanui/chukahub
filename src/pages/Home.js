@@ -12,21 +12,21 @@ function Home() {
   return (
     <div className="min-h-screen bg-gray-800">
       <header className="bg-gray-200 py-4 px-6 flex items-center justify-between sm:px-8">
-        <img src='/logo192.png' alt='logo' className='h-12 w-12'/>
+        <img src='/logo192.png' alt='logo' className='h-12 w-12 rounded-md'/>
         <div className="text-xl font-bold text-black">Chuka <span className="text-orange-500">Repository</span></div>
         <div className="flex items-center">
           <FaUpload
             className="w-6 h-6 text-gray-600 cursor-pointer"
             onClick={() => handleNavigate('/upload')}
           />
-          <div className="ml-3 flex items-center">
+         { /*<div className="ml-3 flex items-center">
             <img
               src="/admin.JPG"
               className="w-10 h-10 rounded-full"
               alt="profile"
             />
             <span className="ml-2">Walter</span>
-          </div>
+  </div>*/}
         </div>
       </header>
 
@@ -64,7 +64,7 @@ function Home() {
 
       <footer className="bg-gray-900 text-white py-4 px-6 text-center fixed bottom-0 w-full">
         <p>
-          © 2023 Chuka OpenAi. All rights reserved. | <a href="https://thikahighschool.com/peterportfolio.html">Designed by Walter</a>
+          © 2023 Chuka OpenAi. All rights reserved. | <a href="https://thikahighschool.com/peterportfolio.html">Designed by schoolr</a>
         </p>
       </footer>
     </div>
