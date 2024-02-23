@@ -3,12 +3,14 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase'; // Assuming you have Firebase config in a separate file
 import { FaArrowLeft } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import { Document, Page } from 'react-pdf'; // Import from react-pdf library
 
 const Exams = () => {
   const [uploads, setUploads] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
+  const [numPages, setNumPages] = useState(null); // For PDF pages count
 
   useEffect(() => {
     fetchData();
@@ -121,10 +123,17 @@ const Exams = () => {
               </button>
             </div>
           </div>
+
           <div className="p-4 md:p-24 w-full md:w-1/2 mt-4 rounded-md flex flex-col md:flex-row gap-8">
             {uploads.length > 0 ? (
               uploads.map((upload) => (
                 <div key={upload.id} className="mb-4 border border-gray-300 p-4 md:p-10 rounded-md bg-slate-200 flex flex-col">
+                  <Document
+                     file={upload.downloadURL}
+                     onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                    >
+                      <Page pageNumber={1} width={150} />
+                  </Document>
                   <h3 className="text-xl mb-2">{upload.title}</h3>
                   <p className="mb-2">{upload.description}</p>
                   <div className="flex gap-2">
@@ -139,6 +148,7 @@ const Exams = () => {
               <p className="mt-4 text-green-400">No past papers found.</p>
             )}
           </div>
+
         </div>
       </div>
     </div>
@@ -146,4 +156,6 @@ const Exams = () => {
 };
 
 export default Exams;
+
+
 

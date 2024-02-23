@@ -31,7 +31,7 @@ function Signup() {
       console.log('User created successfully:', user);
 
       // Navigate to home page:
-      navigate('/home');
+      navigate('/');
     } catch (error) {
       console.error('Error creating user:', error.message);
       setError(error.message);

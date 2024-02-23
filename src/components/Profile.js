@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../firebase'; // Assuming you have set up Firebase configuration and exported the Firestore instance as 'db'
+import { db, auth } from '../firebase'; // Assuming you have set up Firebase configuration and exported the Firestore instance as 'db' and the auth instance as 'auth'
 
 function Profile() {
     const navigate = useNavigate();
+    const [userId, setUserId] = useState(null); // State to store the user ID
     const [isEditingName, setIsEditingName] = useState(false);
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [isEditingCover, setIsEditingCover] = useState(false);
@@ -44,7 +45,20 @@ function Profile() {
         };
 
         fetchPastPapers();
-    }, []);
+
+        // Listen to authentication state changes
+        const unsubscribe = auth.onAuthStateChanged(user => {
+            if (user) {
+                setUserId(user.uid); // Set the user ID
+            } else {
+                // User is signed out, redirect to login or handle appropriately
+                navigate('/login'); // Redirect to login page
+            }
+        });
+
+        // Cleanup function
+        return () => unsubscribe();
+    }, [navigate]);
 
     const handleNameEdit = () => {
         setIsEditingName(!isEditingName);
@@ -66,12 +80,56 @@ function Profile() {
         setActiveContent(content);
     };
 
+    const saveBio = async () => {
+        try {
+            await db.collection('users').doc(userId).update({
+                bio: bio
+            });
+            setIsEditingBio(false); // Exit edit mode
+        } catch (error) {
+            console.error('Error updating bio:', error);
+        }
+    };
+
+    const saveName = async () => {
+        try {
+            await db.collection('users').doc(userId).update({
+                name: name
+            });
+            setIsEditingName(false); // Exit edit mode
+        } catch (error) {
+            console.error('Error updating name:', error);
+        }
+    };
+
+    const saveCoverImage = async () => {
+        try {
+            await db.collection('users').doc(userId).update({
+                coverImage: coverImage
+            });
+            setIsEditingCover(false); // Exit edit mode
+        } catch (error) {
+            console.error('Error updating cover image:', error);
+        }
+    };
+
+    const saveProfilePhoto = async () => {
+        try {
+            await db.collection('users').doc(userId).update({
+                profilePhoto: profilePhoto
+            });
+            setIsEditingPhoto(false); // Exit edit mode
+        } catch (error) {
+            console.error('Error updating profile photo:', error);
+        }
+    };
+
     return (
         <div className="bg-white p-4 rounded-lg shadow-lg">
             {/* Cover Image */}
             <div className="h-40 bg-cover bg-center rounded-t-lg relative" style={{ backgroundImage: `url(${coverImage})` }}>
                 {isEditingCover && (
-                    <button className="absolute top-2 right-2 bg-blue-500 text-black px-2 py-1 rounded" onClick={handleCoverEdit}>Save</button>
+                    <button className="absolute top-2 right-2 bg-blue-500 text-black px-2 py-1 rounded" onClick={saveCoverImage}>Save</button>
                 )}
             </div>
 
@@ -79,7 +137,7 @@ function Profile() {
             <div className="h-32 w-32 rounded-full overflow-hidden mx-auto -mt-16 border-4 border-white shadow-md relative">
                 <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
                 {isEditingPhoto && (
-                    <button className="absolute bottom-2 right-2 bg-blue-500 text-black px-2 py-1 rounded" onClick={handlePhotoEdit}>Save</button>
+                    <button className="absolute bottom-2 right-2 bg-blue-500 text-black px-2 py-1 rounded" onClick={saveProfilePhoto}>Save</button>
                 )}
             </div>
 
@@ -90,7 +148,7 @@ function Profile() {
                 ) : (
                     <h2 className="text-2xl font-bold">{name}</h2>
                 )}
-                <button className="text-blue-500 mt-1" onClick={handleNameEdit}>{isEditingName ? 'Cancel' : 'Edit'}</button>
+                <button className="text-blue-500 mt-1" onClick={isEditingName ? saveName : handleNameEdit}>{isEditingName ? 'Save' : 'Edit'}</button>
             </div>
 
             {/* Bio */}
@@ -100,9 +158,10 @@ function Profile() {
                 ) : (
                     <p className="text-gray-600">{bio}</p>
                 )}
-                <button className="text-blue-500 mt-1" onClick={handleBioEdit}>{isEditingBio ? 'Cancel' : 'Edit'}</button>
+                <button className="text-blue-500 mt-1" onClick={isEditingBio ? saveBio : handleBioEdit}>{isEditingBio ? 'Save' : 'Edit'}</button>
             </div>
 
+            {/* Content Buttons */}
             <div className="p-4 flex justify-between">
                 <button
                     className={`bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition duration-300 ${activeContent === 'videos' ? 'active' : ''}`}
@@ -133,6 +192,7 @@ function Profile() {
             {/* Section to show content based on active category */}
             <div className="bg-white p-4 rounded-lg shadow-lg">
                 <div className="mt-8 grid grid-cols-2 gap-4">
+                    {/* Content Rendering */}
                     {activeContent === 'videos' && videos.map(item => (
                         <div key={item.id} className="border border-gray-200 rounded overflow-hidden shadow-md">
                             <div className="h-40 bg-gray-200"></div>
@@ -175,4 +235,6 @@ function Profile() {
 }
 
 export default Profile;
+
+
 

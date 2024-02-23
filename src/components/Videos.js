@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from '../firebase'; // Assuming you have Firebase config in a separate file
-import { FaArrowLeft } from 'react-icons/fa';
+import { getAuth, currentUser } from 'firebase/auth';
+import { FaArrowLeft, FaThumbsUp, FaComments } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 const Videos = () => {
@@ -30,29 +31,49 @@ const Videos = () => {
       const fetchedUploads = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
+        likes: doc.data().likes || 0, // Default likes to 0 if not present
+        comments: doc.data().comments || 0, // Default comments to 0 if not present
       }));
 
       setUploads(fetchedUploads);
     }
   };
 
-  const handleGetPapers = () => {
+  const handleGetVideos = () => {
+    fetchData();
+  };
+
+  const handleLike = async (uploadId) => {
+    const uploadRef = doc(db, 'uploads', uploadId);
+    await updateDoc(uploadRef, {
+      likes: uploads.find(upload => upload.id === uploadId).likes + 1
+    });
+    // Refresh data after update
+    fetchData();
+  };
+
+  const handleComment = async (uploadId) => {
+    const uploadRef = doc(db, 'uploads', uploadId);
+    await updateDoc(uploadRef, {
+      comments: uploads.find(upload => upload.id === uploadId).comments + 1
+    });
+    // Refresh data after update
     fetchData();
   };
 
   return (
     <div className='bg-gray-900'>
       <div className="navbar bg-gray-200 overflow-hidden flex justify-between items-center h-16 w-full">
-  <div className="flex items-center">
-    <Link to="/home" className="mr-4">
-      <FaArrowLeft className="text-black w-6 h-6" />
-    </Link>
-    <div className="logo py-2 px-4 ml-4 text-black text-lg font-bold">Chuka <span className="text-orange-500">Repository</span></div>
-  </div>
-</div>
-      <div className="uploads-container p-4 md:p-8">
+        <div className="flex items-center">
+          <Link to="/home" className="mr-4">
+            <FaArrowLeft className="text-black w-6 h-6" />
+          </Link>
+          <div className="logo py-2 px-4 ml-4 text-black text-lg font-bold">Chuka <span className="text-orange-500">Repository</span></div>
+        </div>
+      </div>
+      <div className="p-4 md:p-8 ">
         <h2 className="text-2xl mb-2 md:mb-4 font-serif text-center text-white">Videos</h2>
-        <div className="p-4 md:p-30 bg-gray-900 justify-center rounded-md">
+        <div className="p-2 md:p-2 bg-gray-900  justify-center rounded-md">
           <div className="flex flex-col md:flex-row justify-center items-center">
             <div className='p-4 md:p-16 bg-slate-400 w-full md:w-1/2 rounded-md'>
               <div className="mb-4 flex flex-col md:flex-row gap-4">
@@ -115,23 +136,37 @@ const Videos = () => {
                   <option value="4.2">4.2</option>
                 </select>
               </div>
-              <button onClick={handleGetPapers} className="bg-blue-500 text-white px-4 py-2 rounded-md w-full md:w-auto hover:bg-blue-600 transition duration-300">
+              <button onClick={handleGetVideos} className="bg-blue-500 text-white px-4 py-2 rounded-md w-full md:w-auto hover:bg-blue-600 transition duration-300">
                 Get Videos
               </button>
             </div>
           </div>
-          <div className="p-4 md:p-24 w-full md:w-1/2 mt-4 rounded-md flex flex-col md:flex-row gap-8">
+
+          <div className="p-4 flex flex-wrap gap-4">
             {uploads.length > 0 ? (
               uploads.map((upload) => (
-                <div key={upload.id} className="mb-4 border border-gray-300 p-4 md:p-10 rounded-md bg-slate-200 flex flex-col">
-                  <h3 className="text-xl mb-2">{upload.title}</h3>
-                  <p className="mb-2">{upload.description}</p>
-                  <div className="flex gap-2">
-                    <p className="mb-2 flex">Faculty: {upload.faculty}</p>
-                    <p className="mb-2 flex">Department: {upload.department}</p>
-                    <p className="mb-2 flex">Year: {upload.year}</p>
+                <div key={upload.id} className="mb-4 w-full md:w-1/2 lg:w-1/3 xl:w-1/4">
+                  <div className="border border-gray-300 rounded-md bg-slate-200">
+                    <video controls className='w-full rounded-t-md'>
+                      <source src={upload.downloadURL} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                    <div className="p-4">
+                      <div className='flex'>
+                         <img src='/logo192.png' alt='profile' className='h-10 w-10 rounded-md'/>
+                         <p className='m-2 mt-0 text-gray-600'>John Doe</p>
+                         <p>7 min</p>
+                      </div>
+                      <div className='flex gap-10 mt-4'>
+                        <p className='flex gap-2' onClick={() => handleLike(upload.id)}><FaThumbsUp /> {upload.likes} Likes</p>
+                        <p className='flex gap-2' onClick={() => handleComment(upload.id)}><FaComments /> {upload.comments} Comments</p>
+                      </div>
+
+                      <h3 className="text-xl mb-2">{upload.title}</h3>
+                      <p className="mb-2">{upload.description}</p>
+                      <a href={upload.downloadURL} className="text-blue-500 hover:underline">Download</a>
+                    </div>
                   </div>
-                  <a href={upload.downloadURL} className="text-blue-500 hover:underline">Watch</a>
                 </div>
               ))
             ) : (
@@ -145,4 +180,3 @@ const Videos = () => {
 };
 
 export default Videos;
-
