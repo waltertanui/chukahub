@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from '../firebase'; // Assuming you have Firebase config in a separate file
-import { getAuth, currentUser } from 'firebase/auth';
+import { getAuth } from 'firebase/auth'; // Import getAuth from firebase/auth
 import { FaArrowLeft, FaThumbsUp, FaComments } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
@@ -10,10 +10,26 @@ const Videos = () => {
   const [selectedFaculty, setSelectedFaculty] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
+  const [userLikedVideos, setUserLikedVideos] = useState([]); // State to track user liked videos
 
   useEffect(() => {
     fetchData();
+    fetchUserLikedVideos(); // Fetch user liked videos when component mounts
   }, [selectedFaculty, selectedDepartment, selectedYear]);
+
+  // Fetch user liked videos from Firestore
+  const fetchUserLikedVideos = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user) {
+      const userLikedVideosRef = collection(db, 'userLikedVideos');
+      const q = query(userLikedVideosRef, where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const userLikedVideosData = snapshot.docs.map(doc => doc.data().videoId);
+      setUserLikedVideos(userLikedVideosData);
+    }
+  };
 
   const fetchData = async () => {
     if (selectedFaculty && selectedDepartment && selectedYear) {
@@ -44,12 +60,25 @@ const Videos = () => {
   };
 
   const handleLike = async (uploadId) => {
-    const uploadRef = doc(db, 'uploads', uploadId);
-    await updateDoc(uploadRef, {
-      likes: uploads.find(upload => upload.id === uploadId).likes + 1
-    });
-    // Refresh data after update
-    fetchData();
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user && !userLikedVideos.includes(uploadId)) {
+      const uploadRef = doc(db, 'uploads', uploadId);
+      await updateDoc(uploadRef, {
+        likes: uploads.find(upload => upload.id === uploadId).likes + 1
+      });
+
+      // Add user liked video to Firestore
+      await addDoc(collection(db, 'userLikedVideos'), {
+        userId: user.uid,
+        videoId: uploadId
+      });
+
+      // Refresh data after update
+      fetchData();
+      fetchUserLikedVideos(); // Fetch user liked videos again
+    }
   };
 
   const handleComment = async (uploadId) => {
@@ -84,10 +113,14 @@ const Videos = () => {
                   onChange={(e) => setSelectedFaculty(e.target.value)}
                   className="p-2 border border-gray-300 rounded-md w-full md:w-40"
                 >
-                  <option value="">Faculty</option>
+                  <option className='text-center font-serif' value="">Faculty</option>
                   <option value="Science">Science</option>
                   <option value="Law">Law</option>
                   <option value="Humanities">Humanities</option>
+                  <option value="Business">Business</option>
+                  <option value="Nursing">Nursing</option>
+                  <option value="Education">Education</option>
+                  <option value="Agriculture">Agriculture</option>
                 </select>
               </div>
               <div className="mb-4 flex flex-col md:flex-row gap-4">
@@ -105,6 +138,7 @@ const Videos = () => {
                       <option value="IT">IT</option>
                       <option value="Electrical">Electrical</option>
                       <option value="Mechanical">Mechanical</option>
+                      <option value="Mathematics">Mathematics</option>
                     </>
                   )}
                   {selectedFaculty === 'Law' && <option value="Law">Law</option>}

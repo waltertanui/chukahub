@@ -19,7 +19,7 @@ function Home() {
             className="w-6 h-6 text-gray-600 cursor-pointer"
             onClick={() => handleNavigate('/upload')}
           />
-         <div className="ml-3 flex items-center">
+        {/*  <div className="ml-3 flex items-center">
             <img
               src="/admin.JPG"
               className="w-10 h-10 rounded-full"
@@ -28,11 +28,12 @@ function Home() {
             />
             
              </div>
+             */}
         </div>
       </header>
 
       <main className="container mx-auto py-8 px-4 flex flex-col items-center">
-        <h1 className="text-3xl font-bold mb-4 text-white">Welcome to Chuka Repository</h1>
+        <h1 className="text-3xl font-serif text-center mb-4 text-white">Welcome to Chuka Repository</h1>
         <p className="text-lg mb-8 text-white">Knowledge is wealth</p>
 
         <div className="flex flex-wrap justify-center gap-4">

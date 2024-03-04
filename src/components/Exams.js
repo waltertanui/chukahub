@@ -87,6 +87,7 @@ const Exams = () => {
                       <option value="IT">IT</option>
                       <option value="Electrical">Electrical</option>
                       <option value="Mechanical">Mechanical</option>
+                      <option value="Mathematics">Mathematics</option>
                     </>
                   )}
                   {selectedFaculty === 'Law' && <option value="Law">Law</option>}
@@ -124,30 +125,26 @@ const Exams = () => {
             </div>
           </div>
 
-          <div className="p-4 md:p-24 w-full md:w-1/2 mt-4 rounded-md flex flex-col md:flex-row gap-8">
-            {uploads.length > 0 ? (
-              uploads.map((upload) => (
-                <div key={upload.id} className="mb-4 border border-gray-300 p-4 md:p-10 rounded-md bg-slate-200 flex flex-col">
-                  <Document
-                     file={upload.downloadURL}
-                     onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                    >
-                      <Page pageNumber={1} width={150} />
-                  </Document>
-                  <h3 className="text-xl mb-2">{upload.title}</h3>
-                  <p className="mb-2">{upload.description}</p>
-                  <div className="flex gap-2">
-                    <p className="mb-2 flex">Faculty: {upload.faculty}</p>
-                    <p className="mb-2 flex">Department: {upload.department}</p>
-                    <p className="mb-2 flex">Year: {upload.year}</p>
-                  </div>
-                  <a href={upload.downloadURL} className="text-blue-500 hover:underline">Download</a>
-                </div>
-              ))
-            ) : (
-              <p className="mt-4 text-green-400">No past papers found.</p>
-            )}
-          </div>
+          <div className="p-4 md:p-4 w-full md:w-1/2 mt-4 rounded-md flex flex-col md:flex-row gap-8">
+  {uploads.length > 0 ? (
+    uploads.map((upload) => (
+      <div key={upload.id} className="mb-4 border border-gray-300  rounded-md bg-slate-200 flex flex-col">
+        <img src="/document.jpeg" alt="document" className="w-full h-3/4 object-cover mb-0 md:mb-4" />
+        <h3 className="text-xl mb-2 p-0 md:p-2  font-sans">{upload.title}</h3>
+        <p className="mb-2 p-0 md:p-2 ">{upload.description}</p>
+        
+        <a href={upload.downloadURL} className="text-blue-500 hover:underline p-0 md:p-2 ">Download</a>
+      </div>
+    ))
+  ) : (
+    <p className="mt-4 text-green-400">No past papers found.</p>
+  )}
+</div>
+
+
+
+
+
 
         </div>
       </div>

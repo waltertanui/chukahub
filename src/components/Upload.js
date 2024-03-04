@@ -13,9 +13,10 @@ const Upload = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [loading, setLoading] = useState(false); // Add loading state
 
     const facultyDepartments = {
-        'Science': ['Computer Science', 'IT', 'Electrical', 'Mechanical'],
+        'Science': ['Computer Science', 'IT', 'Electrical', 'Mechanical', 'Mathematics'],
         'Law': ['Law'],
         'Humanities': ['Criminology', 'Environment', 'Sociology']
     };
@@ -47,6 +48,7 @@ const Upload = () => {
         }
 
         try {
+            setLoading(true); // Set loading to true when upload starts
             const storageRef = ref(storage, `uploads/${selectedFile.name}`);
             await uploadBytes(storageRef, selectedFile);
             const downloadURL = await getDownloadURL(storageRef);
@@ -69,6 +71,8 @@ const Upload = () => {
         } catch (error) {
             console.error('Error uploading file:', error);
             toast.error('Error uploading file');
+        } finally {
+            setLoading(false); // Set loading to false after upload completes
         }
     };
 
@@ -151,8 +155,9 @@ const Upload = () => {
                             type="button" 
                             onClick={handleUpload} 
                             className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 w-full"
+                            disabled={loading} // Disable button while loading
                         >
-                            Upload
+                            {loading ? 'Uploading...' : 'Upload'}
                         </button>
                     </form>
                 </div>

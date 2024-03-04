@@ -84,6 +84,7 @@ const Cats = () => {
                       <option value="IT">IT</option>
                       <option value="Electrical">Electrical</option>
                       <option value="Mechanical">Mechanical</option>
+                      <option value="Mathematics">Mathematics</option>
                     </>
                   )}
                   {selectedFaculty === 'Law' && <option value="Law">Law</option>}
