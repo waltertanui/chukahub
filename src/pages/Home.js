@@ -1,5 +1,7 @@
 import React from 'react';
-import { FaUpload } from 'react-icons/fa';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUpload } from '@fortawesome/free-solid-svg-icons'
+
 import { useNavigate } from 'react-router-dom';
 
 function Home() {
@@ -8,29 +10,26 @@ function Home() {
   const handleNavigate = (path) => {
     navigate(path);
   };
+  const handleUploadClick = () => {
+    navigate('/upload');
+  };
+
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
 
   return (
     <div className="min-h-screen bg-gray-800">
-      <header className="bg-gray-200 py-4 px-6 flex items-center justify-between sm:px-8">
-        <img src='/logo192.png' alt='logo' className='h-12 w-12 rounded-md'/>
-        <div className="text-xl font-bold text-black">Chuka <span className="text-orange-500">Repository</span></div>
-        <div className="flex items-center">
-          <FaUpload
-            className="w-6 h-6 text-gray-600 cursor-pointer"
-            onClick={() => handleNavigate('/upload')}
-          />
-        {/*  <div className="ml-3 flex items-center">
-            <img
-              src="/admin.JPG"
-              className="w-10 h-10 rounded-full"
-              alt="profile"
-              onClick={()=> handleNavigate('/profile')}
-            />
-            
-             </div>
-             */}
+       <header className="bg-gray-400 text-white shadow md:flex md:items-center md:justify-between py-4 px-6">
+      <img src="/logo192.png" alt="logo" className="h-16 w-16 rounded-md mx-auto md:mx-0" />
+      <div className="text-xl font-bold md:text-left">Chuka <span className="text-accent-color">Repository</span></div>
+      <div className="flex items-center mt-4 md:mt-0">
+        <FontAwesomeIcon icon={faUpload} className="cursor-pointer" onClick={handleUploadClick} />
+        <div className="ml-3 flex items-center">
+          <img src="/admin.JPG" className="w-10 h-10 rounded-full" alt="profile" onClick={handleProfileClick} />
         </div>
-      </header>
+      </div>
+    </header>
 
       <main className="container mx-auto py-8 px-4 flex flex-col items-center">
         <h1 className="text-3xl font-serif text-center mb-4 text-white">Welcome to Chuka Repository</h1>

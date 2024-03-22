@@ -1,240 +1,187 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { db, auth } from '../firebase'; // Assuming you have set up Firebase configuration and exported the Firestore instance as 'db' and the auth instance as 'auth'
+import { collection, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
+import { auth, db } from '../firebase'; // Replace with your Firebase setup (auth only needed for profile update)
 
-function Profile() {
-    const navigate = useNavigate();
-    const [userId, setUserId] = useState(null); // State to store the user ID
-    const [isEditingName, setIsEditingName] = useState(false);
-    const [isEditingBio, setIsEditingBio] = useState(false);
-    const [isEditingCover, setIsEditingCover] = useState(false);
-    const [isEditingPhoto, setIsEditingPhoto] = useState(false);
-    const [activeContent, setActiveContent] = useState('videos');
-    const [coverImage, setCoverImage] = useState('/admin.JPG');
-    const [profilePhoto, setProfilePhoto] = useState('/admin.JPG');
-    const [name, setName] = useState('John Doe');
-    const [bio, setBio] = useState('the greatest');
-    const [videos, setVideos] = useState([
-        { id: 1, title: 'Video 1', url: 'url_to_video_1' },
-        { id: 2, title: 'Video 2', url: 'url_to_video_2' },
-    ]);
-    const [pastPapers, setPastPapers] = useState([]);
-    const [cats, setCats] = useState([
-        { id: 1, title: 'cat 1', url: 'url_to_past_paper_1' },
-        { id: 2, title: 'cat 2', url: 'url_to_past_paper_2' },
-    ]);
-    const [notes, setNotes] = useState([
-        { id: 1, title: 'notes 1', url: 'url_to_past_paper_1' },
-        { id: 2, title: 'notes 2', url: 'url_to_past_paper_2' },
-        { id: 2, title: 'notes 2', url: 'url_to_past_paper_2' },
-        { id: 2, title: 'notes 2', url: 'url_to_past_paper_2' },
-    ]);
+const Profile = () => {
+  const [uploads, setUploads] = useState([]);
+  const [activeCategory, setActiveCategory] = useState('');
 
-    useEffect(() => {
-        const fetchPastPapers = async () => {
-            try {
-                const pastPapersSnapshot = await db.collection('pastPapers').get();
-                const pastPapersData = pastPapersSnapshot.docs.map(doc => {
-                    const data = doc.data();
-                    return { id: doc.id, title: data.title }; // Assuming the title field exists in your documents
-                });
-                setPastPapers(pastPapersData);
-            } catch (error) {
-                console.error('Error fetching past papers:', error);
-            }
-        };
+  // New state for profile editing
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState({
+    name: 'John Doe', // Pre-fill with existing data (if available)
+    course: 'Computer Science (Year 3)',
+  });
 
-        fetchPastPapers();
+  useEffect(() => {
+    const fetchUserUploads = async () => {
+      const user = auth.currentUser;
+      if (!user) return; // Handle case where user is not logged in
 
-        // Listen to authentication state changes
-        const unsubscribe = auth.onAuthStateChanged(user => {
-            if (user) {
-                setUserId(user.uid); // Set the user ID
-            } else {
-                // User is signed out, redirect to login or handle appropriately
-                navigate('/login'); // Redirect to login page
-            }
-        });
+      const q = query(collection(db, 'uploads'), where('userId', '==', user.uid));
+      const querySnapshot = await getDocs(q);
 
-        // Cleanup function
-        return () => unsubscribe();
-    }, [navigate]);
-
-    const handleNameEdit = () => {
-        setIsEditingName(!isEditingName);
+      const fetchedUploads = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setUploads(fetchedUploads);
     };
 
-    const handleBioEdit = () => {
-        setIsEditingBio(!isEditingBio);
-    };
+    fetchUserUploads();
+  }, []);
 
-    const handleCoverEdit = () => {
-        setIsEditingCover(!isEditingCover);
-    };
+  const handleClick = (category) => {
+    setActiveCategory(category);
+  };
 
-    const handlePhotoEdit = () => {
-        setIsEditingPhoto(!isEditingPhoto);
-    };
+  const filteredUploads = () => {
+    if (!activeCategory) return uploads; // Show all uploads if no category selected
+    return uploads.filter((upload) => upload.category === activeCategory);
+  };
 
-    const handleContentChange = (content) => {
-        setActiveContent(content);
-    };
+  // Handle edit profile button click
+  const handleEditProfileClick = () => {
+    setIsEditingProfile(true);
+  };
 
-    const saveBio = async () => {
-        try {
-            await db.collection('users').doc(userId).update({
-                bio: bio
-            });
-            setIsEditingBio(false); // Exit edit mode
-        } catch (error) {
-            console.error('Error updating bio:', error);
-        }
-    };
+  // Handle profile data change
+  const handleProfileChange = (event) => {
+    setProfileData({ ...profileData, [event.target.name]: event.target.value });
+  };
 
-    const saveName = async () => {
-        try {
-            await db.collection('users').doc(userId).update({
-                name: name
-            });
-            setIsEditingName(false); // Exit edit mode
-        } catch (error) {
-            console.error('Error updating name:', error);
-        }
-    };
+  // Handle profile update (assuming you have a profile collection in Firestore)
+  const handleProfileUpdate = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
 
-    const saveCoverImage = async () => {
-        try {
-            await db.collection('users').doc(userId).update({
-                coverImage: coverImage
-            });
-            setIsEditingCover(false); // Exit edit mode
-        } catch (error) {
-            console.error('Error updating cover image:', error);
-        }
-    };
+    const profileRef = doc(db, 'profiles', user.uid); // Update profile document (replace 'profiles' with your collection name)
+    await updateDoc(profileRef, profileData);
 
-    const saveProfilePhoto = async () => {
-        try {
-            await db.collection('users').doc(userId).update({
-                profilePhoto: profilePhoto
-            });
-            setIsEditingPhoto(false); // Exit edit mode
-        } catch (error) {
-            console.error('Error updating profile photo:', error);
-        }
-    };
+    setIsEditingProfile(false); // Close edit form
+  };
 
-    return (
-        <div className="bg-white p-4 rounded-lg shadow-lg">
-            {/* Cover Image */}
-            <div className="h-40 bg-cover bg-center rounded-t-lg relative" style={{ backgroundImage: `url(${coverImage})` }}>
-                {isEditingCover && (
-                    <button className="absolute top-2 right-2 bg-blue-500 text-black px-2 py-1 rounded" onClick={saveCoverImage}>Save</button>
-                )}
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-900">
+      <header className="bg-gray-200 shadow-md p-4 flex justify-between items-center">
+        <h1 className="text-black text-xl font-bold">Chuka <span className="text-orange-500">Repository</span></h1>
+      </header>
 
-            {/* Profile Photo */}
-            <div className="h-32 w-32 rounded-full overflow-hidden mx-auto -mt-16 border-4 border-white shadow-md relative">
-                <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
-                {isEditingPhoto && (
-                    <button className="absolute bottom-2 right-2 bg-blue-500 text-black px-2 py-1 rounded" onClick={saveProfilePhoto}>Save</button>
-                )}
-            </div>
+      <main className="container mx-auto px-4 py-16 flex flex-col space-y-8">
+        <section className="flex flex-col items-center">
+          {isEditingProfile ? ( // Display edit form when toggled
+            <form onSubmit={handleProfileUpdate} className="flex flex-col space-y-4">
+              <input
+                type="text"
+                name="name"
+                value={profileData.name}
+                onChange={handleProfileChange}
+                placeholder="Name"
+                className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                name="course"
+                value={profileData.course}
+                onChange={handleProfileChange}
+                placeholder="Course"
+                className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded font-bold">
+                Save Profile
+              </button>
+              <button
+                type="button" // Use type="button" to prevent form submission
+                onClick={() => setIsEditingProfile(false)}
+                className="text-gray-500 hover:text-blue-500 underline"
+              >
+                Cancel
+              </button>
+            </form>
+          ) : ( // Display profile information when not editing
+            <>
+              <img src="profile-picture.png" alt="Profile Picture" className="w-32 h-32 rounded-full border border-gray-200 mb-4" />
+              <h2 className="text-xl font-bold text-white">{profileData.name}</h2>
+              <p className="text-gray-500 mb-4">{profileData.course}</p>
+              <button onClick={handleEditProfileClick} className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded font-bold">Edit Profile</button>
+            </>
+          )}
+        </section>
 
-            {/* Profile Name */}
-            <div className="text-center mt-4">
-                {isEditingName ? (
-                    <input type="text" className="text-2xl font-bold border-b border-gray-400 focus:outline-none" value={name} onChange={(e) => setName(e.target.value)} />
-                ) : (
-                    <h2 className="text-2xl font-bold">{name}</h2>
-                )}
-                <button className="text-blue-500 mt-1" onClick={isEditingName ? saveName : handleNameEdit}>{isEditingName ? 'Save' : 'Edit'}</button>
-            </div>
+        <section className="flex justify-center mb-4">
+          <button
+            className={`bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md mx-2 ${
+              activeCategory === '' && 'bg-gray-300 text-white'
+            }`}
+            onClick={() => handleClick('')}
+          >
+            All
+          </button>
+          <button
+            className={`bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md mx-2 ${
+              activeCategory === 'pastpapers' && 'bg-gray-300 text-white'
+            }`}
+            onClick={() => handleClick('pastpapers')}
+          >
+            Past Papers
+          </button>
+          <button
+            className={`bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md mx-2 ${
+              activeCategory === 'video' && 'bg-gray-300 text-white'
+            }`}
+            onClick={() => handleClick('video')} // Changed from 'videos' to 'video'
+          >
+            Video
+          </button>
+          <button
+            className={`bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md mx-2 ${
+              activeCategory === 'notes' && 'bg-gray-300 text-white'
+            }`}
+            onClick={() => handleClick('notes')}
+          >
+            Notes
+          </button>
+        </section>
 
-            {/* Bio */}
-            <div className="text-center mt-2 px-4">
-                {isEditingBio ? (
-                    <textarea className="border border-gray-400 p-2 focus:outline-none" value={bio} onChange={(e) => setBio(e.target.value)} />
-                ) : (
-                    <p className="text-gray-600">{bio}</p>
-                )}
-                <button className="text-blue-500 mt-1" onClick={isEditingBio ? saveBio : handleBioEdit}>{isEditingBio ? 'Save' : 'Edit'}</button>
-            </div>
 
-            {/* Content Buttons */}
-            <div className="p-4 flex justify-between">
-                <button
-                    className={`bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition duration-300 ${activeContent === 'videos' ? 'active' : ''}`}
-                    onClick={() => handleContentChange('videos')}
-                >
-                    Videos
-                </button>
-                <button
-                    className={`bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300 ${activeContent === 'pastPapers' ? 'active' : ''}`}
-                    onClick={() => handleContentChange('pastPapers')}
-                >
-                    Past Papers
-                </button>
-                <button
-                    onClick={() => handleContentChange('notes')}
-                    className={`bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-300 ${activeContent === 'notes' ? 'active' : ''}`}
-                >
-                    Notes
-                </button>
-                <button
-                    className={`bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition duration-300 ${activeContent === 'cats' ? 'active' : ''}`}
-                    onClick={() => handleContentChange('cats')}
-                >
-                    CATs
-                </button>
-            </div>
+        {filteredUploads().length > 0 && (
+         <section className="rounded-lg shadow-md overflow-hidden">
+         <h2 className={`text-xl font-bold p-4 border-b border-gray-200 text-white ${activeCategory === 'notes' ? 'bg-blue-500' : activeCategory === 'pastpapers' ? 'bg-yellow-500' : activeCategory === 'video' ? 'bg-green-500' : ''}`}>
+           {activeCategory === 'notes' ? 'Notes' : activeCategory === 'pastpapers' ? 'Past Papers' : activeCategory === 'video' ? 'Video' : ''}
+         </h2>
 
-            {/* Section to show content based on active category */}
-            <div className="bg-white p-4 rounded-lg shadow-lg">
-                <div className="mt-8 grid grid-cols-2 gap-4">
-                    {/* Content Rendering */}
-                    {activeContent === 'videos' && videos.map(item => (
-                        <div key={item.id} className="border border-gray-200 rounded overflow-hidden shadow-md">
-                            <div className="h-40 bg-gray-200"></div>
-                            <div className="p-4">
-                                <h3 className="text-lg font-semibold">{item.title}</h3>
-                            </div>
-                        </div>
-                    ))}
-
-                    {activeContent === 'pastPapers' && pastPapers.map(item => (
-                        <div key={item.id} className="border border-gray-200 rounded overflow-hidden shadow-md">
-                            <div className="h-40 bg-gray-200"></div>
-                            <div className="p-4">
-                                <h3 className="text-lg font-semibold">{item.title}</h3>
-                            </div>
-                        </div>
-                    ))}
-
-                    {activeContent === 'cats' && cats.map(item => (
-                        <div key={item.id} className="border border-gray-200 rounded overflow-hidden shadow-md">
-                            <div className="h-40 bg-gray-200"></div>
-                            <div className="p-4">
-                                <h3 className="text-lg font-semibold">{item.title}</h3>
-                            </div>
-                        </div>
-                    ))}
-
-                    {activeContent === 'notes' && notes.map(item => (
-                        <div key={item.id} className="border border-gray-200 rounded overflow-hidden shadow-md">
-                            <div className="h-40 bg-gray-200"></div>
-                            <div className="p-4">
-                                <h3 className="text-lg font-semibold">{item.title}</h3>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
+         <div className="mx-auto">
+  <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full p-4">
+    {filteredUploads().map((upload) => (
+      <li
+        key={upload.id}
+        className="flex flex-col items-center rounded-lg bg-slate-400 hover:bg-gray-100 overflow-hidden shadow-md"
+      >
+        {upload.category === "video" ? (
+          <video controls className="w-full h-48 object-cover rounded-t-lg">
+            <source src={upload.downloadURL} type="video/mp4" />
+            Your browser does not support the video tag or the video format is not supported.
+          </video>
+        ) : (
+          <img src="placeholder.png" alt="Thumbnail" className="w-full h-48 object-cover rounded-t-lg" />
+        )}
+        <div className="flex flex-col items-center p-4">
+          <span className="text-gray-700 hover:text-blue-500 font-medium text-center truncate">
+            {upload.title}
+          </span>
+          <span className="text-sm text-gray-500 text-center">{upload.category}</span>
         </div>
-    );
-}
+      </li>
+    ))}
+  </ul>
+</div>
+
+       </section>
+        )}
+      </main>
+    </div>
+  );
+};
 
 export default Profile;
-
-
 
