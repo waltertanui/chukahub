@@ -11,11 +11,26 @@ const Videos = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
   const [userLikedVideos, setUserLikedVideos] = useState([]); // State to track user liked videos
+  const [userInfo, setUserInfo] = useState(null); // State to store user information
 
   useEffect(() => {
+    fetchUserInfo(); // Fetch user information when component mounts
     fetchData();
     fetchUserLikedVideos(); // Fetch user liked videos when component mounts
   }, [selectedFaculty, selectedDepartment, selectedYear]);
+
+  // Fetch user information from Firebase Authentication
+  const fetchUserInfo = () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user) {
+      setUserInfo({
+        displayName: user.displayName,
+        photoURL: user.photoURL
+      });
+    }
+  };
 
   // Fetch user liked videos from Firestore
   const fetchUserLikedVideos = async () => {
@@ -138,7 +153,7 @@ const Videos = () => {
                       <option value="IT">IT</option>
                       <option value="Electrical">Electrical</option>
                       <option value="Mechanical">Mechanical</option>
-                      <option value="Mathematics">Mathematics</option>
+                      <                      option value="Mathematics">Mathematics</option>
                     </>
                   )}
                   {selectedFaculty === 'Law' && <option value="Law">Law</option>}
@@ -187,8 +202,12 @@ const Videos = () => {
                     </video>
                     <div className="p-4">
                       <div className='flex'>
-                         <img src='/logo192.png' alt='profile' className='h-10 w-10 rounded-md'/>
-                         <p className='m-2 mt-0 text-gray-600'>John Doe</p>
+                         {userInfo && userInfo.photoURL ? (
+                           <img src={userInfo.photoURL} alt='profile' className='h-10 w-10 rounded-md'/>
+                         ) : (
+                           <div className='h-10 w-10 rounded-md bg-gray-300'></div>
+                         )}
+                         <p className='m-2 mt-0 text-gray-600'>{userInfo && userInfo.displayName ? userInfo.displayName : 'Anonymous'}</p>
                          <p>7 min</p>
                       </div>
                       <div className='flex gap-10 mt-4'>
@@ -214,3 +233,5 @@ const Videos = () => {
 };
 
 export default Videos;
+
+

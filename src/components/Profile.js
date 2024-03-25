@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
 import { auth, db } from '../firebase'; // Replace with your Firebase setup (auth only needed for profile update)
+import ProfileInfo from './profileinfo';
+
 
 const Profile = () => {
   const [uploads, setUploads] = useState([]);
   const [activeCategory, setActiveCategory] = useState('');
 
-  // New state for profile editing
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: 'John Doe', // Pre-fill with existing data (if available)
-    course: 'Computer Science (Year 3)',
-  });
+  
 
   useEffect(() => {
     const fetchUserUploads = async () => {
@@ -40,26 +37,7 @@ const Profile = () => {
     return uploads.filter((upload) => upload.category === activeCategory);
   };
 
-  // Handle edit profile button click
-  const handleEditProfileClick = () => {
-    setIsEditingProfile(true);
-  };
-
-  // Handle profile data change
-  const handleProfileChange = (event) => {
-    setProfileData({ ...profileData, [event.target.name]: event.target.value });
-  };
-
-  // Handle profile update (assuming you have a profile collection in Firestore)
-  const handleProfileUpdate = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const profileRef = doc(db, 'profiles', user.uid); // Update profile document (replace 'profiles' with your collection name)
-    await updateDoc(profileRef, profileData);
-
-    setIsEditingProfile(false); // Close edit form
-  };
+  
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -68,46 +46,7 @@ const Profile = () => {
       </header>
 
       <main className="container mx-auto px-4 py-16 flex flex-col space-y-8">
-        <section className="flex flex-col items-center">
-          {isEditingProfile ? ( // Display edit form when toggled
-            <form onSubmit={handleProfileUpdate} className="flex flex-col space-y-4">
-              <input
-                type="text"
-                name="name"
-                value={profileData.name}
-                onChange={handleProfileChange}
-                placeholder="Name"
-                className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="text"
-                name="course"
-                value={profileData.course}
-                onChange={handleProfileChange}
-                placeholder="Course"
-                className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded font-bold">
-                Save Profile
-              </button>
-              <button
-                type="button" // Use type="button" to prevent form submission
-                onClick={() => setIsEditingProfile(false)}
-                className="text-gray-500 hover:text-blue-500 underline"
-              >
-                Cancel
-              </button>
-            </form>
-          ) : ( // Display profile information when not editing
-            <>
-              <img src="profile-picture.png" alt="Profile Picture" className="w-32 h-32 rounded-full border border-gray-200 mb-4" />
-              <h2 className="text-xl font-bold text-white">{profileData.name}</h2>
-              <p className="text-gray-500 mb-4">{profileData.course}</p>
-              <button onClick={handleEditProfileClick} className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded font-bold">Edit Profile</button>
-            </>
-          )}
-        </section>
-
+         <ProfileInfo/>
         <section className="flex justify-center mb-4">
           <button
             className={`bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md mx-2 ${
