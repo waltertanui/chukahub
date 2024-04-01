@@ -108,7 +108,7 @@ const Profile = () => {
           <span className="text-gray-700 hover:text-blue-500 font-medium text-center truncate">
             {upload.title}
           </span>
-          <span className="text-sm text-gray-500 text-center">{upload.category}</span>
+          <span className="text-sm text-gray-500 text-center">{ }</span>
         </div>
       </li>
     ))}

@@ -4,6 +4,7 @@ import { db } from '../firebase'; // Assuming you have Firebase config in a sepa
 import { getAuth } from 'firebase/auth'; // Import getAuth from firebase/auth
 import { FaArrowLeft, FaThumbsUp, FaComments } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import { auth, storage } from '../firebase'; // Make sure firebase setup is correct
 
 const Videos = () => {
   const [uploads, setUploads] = useState([]);
@@ -11,25 +12,31 @@ const Videos = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
   const [userLikedVideos, setUserLikedVideos] = useState([]); // State to track user liked videos
-  const [userInfo, setUserInfo] = useState(null); // State to store user information
+  const [profileData, setProfileData] = useState({ name: '', profileImageUrl: '' }); // State to store user profile data
 
   useEffect(() => {
-    fetchUserInfo(); // Fetch user information when component mounts
+    fetchProfileData(); // Fetch user profile data when component mounts
     fetchData();
     fetchUserLikedVideos(); // Fetch user liked videos when component mounts
   }, [selectedFaculty, selectedDepartment, selectedYear]);
 
-  // Fetch user information from Firebase Authentication
-  const fetchUserInfo = () => {
-    const auth = getAuth();
+  // Fetch user profile data from Firebase
+  const fetchProfileData = async () => {
     const user = auth.currentUser;
-
-    if (user) {
-      setUserInfo({
-        displayName: user.displayName,
-        photoURL: user.photoURL
-      });
+    if (!user) return;
+  
+    const profileRef = collection(db, 'profiles'); // Use collection instead of doc
+    const q = query(profileRef, where('userId', '==', user.uid)); // Construct a query
+    const snapshot = await getDocs(q);
+  
+    if (snapshot.empty) {
+      console.log("No profile document found");
+      return;
     }
+  
+    const data = snapshot.docs[0].data(); // Assuming there's only one profile document per user
+    console.log("Fetched profile data:", data);
+    setProfileData(data);
   };
 
   // Fetch user liked videos from Firestore
@@ -153,7 +160,7 @@ const Videos = () => {
                       <option value="IT">IT</option>
                       <option value="Electrical">Electrical</option>
                       <option value="Mechanical">Mechanical</option>
-                      <                      option value="Mathematics">Mathematics</option>
+                      <option value="Mathematics">Mathematics</option>
                     </>
                   )}
                   {selectedFaculty === 'Law' && <option value="Law">Law</option>}
@@ -191,25 +198,25 @@ const Videos = () => {
             </div>
           </div>
 
-          <div className="p-4 flex flex-wrap gap-4">
+          <div className="p-4 flex  flex-wrap md:w-full gap-4">
             {uploads.length > 0 ? (
               uploads.map((upload) => (
-                <div key={upload.id} className="mb-4 w-full md:w-1/2 lg:w-1/3 xl:w-1/4">
-                  <div className="border border-gray-300 rounded-md bg-slate-200">
+                <div key={upload.id} className="mb-4 md:w-1/2 md:flex-row">
+                  <div className="border border-gray-900 rounded-md bg-slate-200">
                     <video controls className='w-full rounded-t-md'>
                       <source src={upload.downloadURL} type="video/mp4" />
                       Your browser does not support the video tag.
                     </video>
                     <div className="p-4">
-                      <div className='flex'>
-                         {userInfo && userInfo.photoURL ? (
-                           <img src={userInfo.photoURL} alt='profile' className='h-10 w-10 rounded-md'/>
-                         ) : (
-                           <div className='h-10 w-10 rounded-md bg-gray-300'></div>
-                         )}
-                         <p className='m-2 mt-0 text-gray-600'>{userInfo && userInfo.displayName ? userInfo.displayName : 'Anonymous'}</p>
-                         <p>7 min</p>
+                    <div className='flex'>
+                      {profileData && profileData.profileImageUrl ? (
+                        <img src={profileData.profileImageUrl} alt='profile' className='h-10 w-10 rounded-md'/>
+                      ) : (
+                        <div className='h-10 w-10 rounded-md bg-gray-300'></div>
+                      )}
+                        <p className='m-2 mt-0 text-gray-600'>{profileData?.name ? profileData.name : 'Anonymous'}</p>
                       </div>
+
                       <div className='flex gap-10 mt-4'>
                         <p className='flex gap-2' onClick={() => handleLike(upload.id)}><FaThumbsUp /> {upload.likes} Likes</p>
                         <p className='flex gap-2' onClick={() => handleComment(upload.id)}><FaComments /> {upload.comments} Comments</p>
@@ -233,5 +240,6 @@ const Videos = () => {
 };
 
 export default Videos;
+
 
 
