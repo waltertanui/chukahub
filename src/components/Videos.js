@@ -1,45 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, doc, updateDoc, addDoc } from 'firebase/firestore';
-import { db } from '../firebase'; // Assuming you have Firebase config in a separate file
-import { getAuth } from 'firebase/auth'; // Import getAuth from firebase/auth
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, getDoc } from 'firebase/firestore';
+
+import { getAuth } from 'firebase/auth';
+import { db, } from '../firebase'; // Import db from firebase config
 import { FaArrowLeft, FaThumbsUp, FaComments } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { auth, storage } from '../firebase'; // Make sure firebase setup is correct
 
 const Videos = () => {
   const [uploads, setUploads] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
-  const [userLikedVideos, setUserLikedVideos] = useState([]); // State to track user liked videos
-  const [profileData, setProfileData] = useState({ name: '', profileImageUrl: '' }); // State to store user profile data
+  const [userLikedVideos, setUserLikedVideos] = useState([]);
+  const [profileData, setProfileData] = useState(null); // State to store profile data
 
   useEffect(() => {
-    fetchProfileData(); // Fetch user profile data when component mounts
     fetchData();
-    fetchUserLikedVideos(); // Fetch user liked videos when component mounts
+    fetchUserLikedVideos();
+    fetchProfileData();
   }, [selectedFaculty, selectedDepartment, selectedYear]);
 
-  // Fetch user profile data from Firebase
-  const fetchProfileData = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-  
-    const profileRef = collection(db, 'profiles'); // Use collection instead of doc
-    const q = query(profileRef, where('userId', '==', user.uid)); // Construct a query
-    const snapshot = await getDocs(q);
-  
-    if (snapshot.empty) {
-      console.log("No profile document found");
-      return;
-    }
-  
-    const data = snapshot.docs[0].data(); // Assuming there's only one profile document per user
-    console.log("Fetched profile data:", data);
-    setProfileData(data);
-  };
-
-  // Fetch user liked videos from Firestore
   const fetchUserLikedVideos = async () => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -53,15 +33,29 @@ const Videos = () => {
     }
   };
 
+  const fetchProfileData = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user) {
+      const profileRef = doc(db, 'profiles', user.uid);
+      const profileSnap = await getDoc(profileRef);
+      if (profileSnap.exists()) {
+        const data = profileSnap.data();
+        setProfileData(data);
+      }
+    }
+  };
+
   const fetchData = async () => {
     if (selectedFaculty && selectedDepartment && selectedYear) {
       const uploadsRef = collection(db, 'uploads');
       const q = query(
         uploadsRef,
-        where('category', '==', 'video'), // Filter by category
-        where('faculty', '==', selectedFaculty), // Filter by faculty
-        where('department', '==', selectedDepartment), // Filter by department
-        where('year', '==', selectedYear) // Filter by year
+        where('category', '==', 'video'),
+        where('faculty', '==', selectedFaculty),
+        where('department', '==', selectedDepartment),
+        where('year', '==', selectedYear)
       );
 
       const snapshot = await getDocs(q);
@@ -69,8 +63,8 @@ const Videos = () => {
       const fetchedUploads = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-        likes: doc.data().likes || 0, // Default likes to 0 if not present
-        comments: doc.data().comments || 0, // Default comments to 0 if not present
+        likes: doc.data().likes || 0,
+        comments: doc.data().comments || 0,
       }));
 
       setUploads(fetchedUploads);
@@ -91,15 +85,13 @@ const Videos = () => {
         likes: uploads.find(upload => upload.id === uploadId).likes + 1
       });
 
-      // Add user liked video to Firestore
       await addDoc(collection(db, 'userLikedVideos'), {
         userId: user.uid,
         videoId: uploadId
       });
 
-      // Refresh data after update
       fetchData();
-      fetchUserLikedVideos(); // Fetch user liked videos again
+      fetchUserLikedVideos();
     }
   };
 
@@ -108,7 +100,6 @@ const Videos = () => {
     await updateDoc(uploadRef, {
       comments: uploads.find(upload => upload.id === uploadId).comments + 1
     });
-    // Refresh data after update
     fetchData();
   };
 
@@ -128,7 +119,7 @@ const Videos = () => {
           <div className="flex flex-col md:flex-row justify-center items-center">
             <div className='p-4 md:p-16 bg-slate-400 w-full md:w-1/2 rounded-md'>
               <div className="mb-4 flex flex-col md:flex-row gap-4">
-                <label htmlFor="faculty" className="block mb-1 text-white md:w-40">Select Faculty:</label>
+              <label htmlFor="faculty" className="block mb-1 text-white md:w-40">Select Faculty:</label>
                 <select
                   id="faculty"
                   value={selectedFaculty}
@@ -208,23 +199,26 @@ const Videos = () => {
                       Your browser does not support the video tag.
                     </video>
                     <div className="p-4">
-                    <div className='flex'>
-                      {profileData && profileData.profileImageUrl ? (
-                        <img src={profileData.profileImageUrl} alt='profile' className='h-10 w-10 rounded-md'/>
-                      ) : (
-                        <div className='h-10 w-10 rounded-md bg-gray-300'></div>
-                      )}
-                        <p className='m-2 mt-0 text-gray-600'>{profileData?.name ? profileData.name : 'Anonymous'}</p>
-                      </div>
+                      
+                      {profileData && (
+                         <div className="flex items-center">
+                           <img src={profileData.profileImageUrl} alt="Profile" className="w-12 h-12 rounded-full mr-2" />
+                          <div>
+                          <p className="font-semibold">{profileData.name}</p>
+                          <p className="text-gray-500">{profileData.course}</p>
+                          {/* Display additional profile data as needed */}
+                        </div>
+                        </div>
+                     )}
 
                       <div className='flex gap-10 mt-4'>
                         <p className='flex gap-2' onClick={() => handleLike(upload.id)}><FaThumbsUp /> {upload.likes} Likes</p>
                         <p className='flex gap-2' onClick={() => handleComment(upload.id)}><FaComments /> {upload.comments} Comments</p>
                       </div>
-
                       <h3 className="text-xl mb-2">{upload.title}</h3>
                       <p className="mb-2">{upload.description}</p>
                       <a href={upload.downloadURL} className="text-blue-500 hover:underline">Download</a>
+                      
                     </div>
                   </div>
                 </div>
@@ -240,6 +234,10 @@ const Videos = () => {
 };
 
 export default Videos;
+
+
+
+
 
 
 
